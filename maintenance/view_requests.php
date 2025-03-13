@@ -1,0 +1,627 @@
+<?php
+include '../includes/header.php';
+
+
+    $query = "SELECT sr.request_id, sr.user_id, sr.category, sr.description, sr.status, sr.created_at, 
+    u.f_name, u.l_name 
+FROM service_requests sr 
+JOIN users u ON sr.user_id = u.user_id 
+ORDER BY sr.created_at DESC";
+
+// After (fixed code):
+// Get the current logged-in user ID from the session
+if (!isset($_SESSION['user_id'])) {
+// Redirect to login page if user is not logged in
+header("Location: ../login.php");
+exit;
+}
+
+$user_id = $_SESSION['user_id'];
+
+$query = "SELECT sr.request_id, sr.user_id, sr.category, sr.description, sr.status, sr.created_at, 
+    u.f_name, u.l_name 
+FROM service_requests sr 
+JOIN users u ON sr.user_id = u.user_id 
+WHERE sr.user_id = ?
+ORDER BY sr.created_at DESC";
+
+if ($stmt = $conn->prepare($query)) {
+$stmt->bind_param("i", $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+$requests = $result->fetch_all(MYSQLI_ASSOC);
+$stmt->close();
+} else {
+die("Query error: " . $conn->error);
+}
+
+// Define status classes for better visual representation
+$statusClasses = [
+    'pending' => 'status-pending',
+    'in-progress' => 'status-progress',
+    'completed' => 'status-completed',
+    'cancelled' => 'status-cancelled'
+];
+
+// Set page title for better SEO and browser tab display
+$pageTitle = "Service Requests Dashboard";
+?>
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?= $pageTitle ?></title>
+    <link rel="stylesheet" href="../style/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="dashboard-header">
+            <h1><i class="fas fa-ticket-alt"></i> Service Requests</h1>
+            <div class="header-actions">
+                <a href="/subdisystem/maintenance/create_request.php" class="btn btn-primary"><i class="fas fa-plus"></i> New Request</a>
+                <div class="search-container">
+                    <input type="text" id="requestSearch" placeholder="Search requests...">
+                    <i class="fas fa-search search-icon"></i>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <?php if (empty($requests)): ?>
+                <div class="empty-state">
+                    <i class="fas fa-inbox fa-4x"></i>
+                    <p>No service requests found</p>
+                    <a href="/subdisystem/maintenance/create_request.php" class="btn btn-outline">Create your first request</a>
+                </div>
+            <?php else: ?>
+                <div class="table-container">
+                    <table id="requestsTable">
+                        <thead>
+                            <tr>
+                                <th>User <i class="fas fa-sort"></i></th>
+                                <th>Category <i class="fas fa-sort"></i></th>
+                                <th>Description</th>
+                                <th>Status <i class="fas fa-sort"></i></th>
+                                <th>Created <i class="fas fa-sort"></i></th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($requests as $request): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars($request['f_name'] . ' ' . $request['l_name']); ?></td>
+                                    <td><?= htmlspecialchars($request['category']); ?></td>
+                                    <td class="description-cell">
+                                        <div class="truncate-text" title="<?= htmlspecialchars($request['description']); ?>">
+                                            <?= htmlspecialchars($request['description']); ?>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge <?= $statusClasses[strtolower($request['status'])] ?? ''; ?>">
+                                            <?= htmlspecialchars($request['status']); ?>
+                                        </span>
+                                    </td>
+                                    <td><?= date('M d, Y', strtotime($request['created_at'])); ?></td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a href="edit_request.php?id=<?= $request['request_id']; ?>" class="edit-btn" title="Edit request">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="javascript:void(0)" class="delete-btn" 
+                                               onclick="confirmDelete(<?= $request['request_id']; ?>)" title="Delete request">
+                                                <i class="fas fa-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php endif; ?>
+        </main>
+    </div>
+
+    <!-- Modal for delete confirmation -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3><i class="fas fa-exclamation-triangle"></i> Confirm Deletion</h3>
+            <p>Are you sure you want to delete this service request? This action cannot be undone.</p>
+            <div class="modal-actions">
+                <button id="cancelDelete" class="btn btn-secondary">Cancel</button>
+                <a id="confirmDeleteBtn" href="#" class="btn btn-danger">Delete</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Search functionality
+        const searchInput = document.getElementById('requestSearch');
+        searchInput.addEventListener('keyup', function() {
+            const searchTerm = this.value.toLowerCase();
+            const tableRows = document.querySelectorAll('#requestsTable tbody tr');
+            
+            tableRows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+        
+        // Delete modal functionality
+        const modal = document.getElementById('deleteModal');
+        const closeModal = document.querySelector('.close-modal');
+        const cancelDelete = document.getElementById('cancelDelete');
+        
+        window.confirmDelete = function(requestId) {
+            modal.style.display = 'block';
+            document.getElementById('confirmDeleteBtn').href = `delete_request.php?id=${requestId}`;
+        }
+        
+        closeModal.onclick = function() {
+            modal.style.display = 'none';
+        }
+        
+        cancelDelete.onclick = function() {
+            modal.style.display = 'none';
+        }
+        
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    });
+    </script>
+
+    <style>
+    /* ------------ Base & Reset ------------ */
+    :root {
+        --primary: #17a2b8;
+        --primary-dark: #138496;
+        --secondary: #6c757d;
+        --danger: #dc3545;
+        --success: #28a745;
+        --warning: #ffc107;
+        --info: #17a2b8;
+        --dark: #121212;
+        --darker: #0a0a0a;
+        --medium-dark: #1c1c1c;
+        --light-dark: #2a2a2a;
+        --border: #333;
+        --text: #ffffff;
+        --text-secondary: #b0b0b0;
+        --transition: all 0.3s ease;
+        --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        background-color: white;
+        color: var(--text);
+        font-family: 'Inter', 'Segoe UI', sans-serif;
+        margin: 0;
+        padding: 0;
+        line-height: 1.6;
+
+    }
+
+    /* ------------ Layout & Container ------------ */
+    .container {
+        max-width: 1200px;
+        margin: 5 auto;
+        padding: 2rem;
+        margin-top: 12.7px; /* Moves the container down by half an inch */
+    }
+
+
+    /* ------------ Header ------------ */
+    .dashboard-header {
+
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 10rem;
+    }
+
+
+    .dashboard-header h1 {
+        font-size: 2rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: black;
+        text-transform: none;
+        border: none;
+    }
+
+    .dashboard-header h1 i {
+        color: var(--primary);
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    /* ------------ Search Bar ------------ */
+    .search-container {
+        position: relative;
+    }
+
+    .search-container input {
+        background-color: white;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        color: black;
+        font-size: 0.9rem;
+        width: 250px;
+        transition: var(--transition);
+    }
+
+    .search-container input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(23, 162, 184, 0.25);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-secondary);
+    }
+
+    /* ------------ Table Styling ------------ */
+    .table-container {
+        overflow-x: auto;
+        border-radius: 8px;
+        background-color: var(--medium-dark);
+        box-shadow: var(--shadow);
+
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    thead {
+        background-color: var(--light-dark);
+        border-bottom: 2px solid var(--border);
+    }
+
+    th {
+        padding: 1rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: black;
+        cursor: pointer;
+        background-color: white;
+    }
+
+    th i {
+        margin-left: 0.5rem;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        transition: var(--transition);
+    }
+
+    th:hover i {
+        color: var(--primary);
+    }
+
+    tbody tr {
+        border-bottom: 1px solid var(--border);
+        transition: var(--transition);
+    }
+
+    tbody tr:hover {
+        background-color: var(--light-dark);
+    }
+
+    td {
+        padding: 1rem;
+        font-size: 0.95rem;
+        color: black;
+        background-color: white;
+    }
+
+    /* ------------ Description cell handling ------------ */
+    .description-cell {
+        max-width: 300px;
+    }
+
+    .truncate-text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: pointer;
+    }
+
+    /* ------------ Status Badges ------------ */
+    .status-badge {
+        display: inline-block;
+        padding: 0.35rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-transform: capitalize;
+    }
+
+    .status-pending {
+        background-color: rgba(255, 193, 7, 0.2);
+        color: var(--warning);
+        border: 1px solid rgba(255, 193, 7, 0.3);
+    }
+
+    .status-progress {
+        background-color: rgba(23, 162, 184, 0.2);
+        color: var(--info);
+        border: 1px solid rgba(23, 162, 184, 0.3);
+    }
+
+    .status-completed {
+        background-color: rgba(40, 167, 69, 0.2);
+        color: var(--success);
+        border: 1px solid rgba(40, 167, 69, 0.3);
+    }
+
+    .status-cancelled {
+        background-color: rgba(220, 53, 69, 0.2);
+        color: var(--danger);
+        border: 1px solid rgba(220, 53, 69, 0.3);
+    }
+
+    /* ------------ Action Buttons ------------ */
+    .action-buttons {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .action-buttons a {
+        width: 2.5rem;
+        height: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        transition: var(--transition);
+    }
+
+
+    .edit-btn {
+        background-color: rgba(255, 193, 7, 0.15);
+        color: var(--warning);
+    }
+
+    .edit-btn:hover {
+        background-color: rgba(255, 193, 7, 0.25);
+    }
+
+    .delete-btn {
+        background-color: rgba(220, 53, 69, 0.15);
+        color: var(--danger);
+    }
+
+    .delete-btn:hover {
+        background-color: rgba(220, 53, 69, 0.25);
+    }
+
+    /* ------------ Empty State ------------ */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 1rem;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+
+    }
+
+    .empty-state i {
+        color: gray;
+        margin-bottom: 1rem;
+    }
+
+    .empty-state p {
+        color: black;
+        font-size: 1.1rem;
+        margin-bottom: 1.5rem;
+    }
+
+
+
+    /* ------------ Modal ------------ */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-content {
+        background-color:white;
+        margin: 15% auto;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: var(--shadow);
+        width: 90%;
+        max-width: 500px;
+        animation: modalFade 0.3s;
+    }
+
+    @keyframes modalFade {
+        from {opacity: 0; transform: translateY(-20px);}
+        to {opacity: 1; transform: translateY(0);}
+    }
+
+    .close-modal {
+        color: var(--text-secondary);
+        float: right;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .close-modal:hover {
+        color: var(--text);
+    }
+
+    .modal h3 {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--text);
+        margin-bottom: 1rem;
+    }
+
+    .modal h3 i {
+        color: var(--danger);
+    }
+
+    .modal p {
+        margin-bottom: 1.5rem;
+        color: var(--text-secondary);
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+
+    /* ------------ Buttons ------------ */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 0.95rem;
+        cursor: pointer;
+        text-decoration: none;
+        transition: var(--transition);
+        border: none;
+    }
+
+    .btn-primary {
+        background-color: var(--primary);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: var(--primary-dark);
+    }
+
+    .btn-secondary {
+        background-color: var(--secondary);
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background-color: #5a6268;
+    }
+
+    .btn-danger {
+        background-color: var(--danger);
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background-color: #c82333;
+    }
+
+    .btn-outline {
+        background-color: transparent;
+        border: 1px solid var(--primary);
+        color: var(--primary);
+    }
+
+    .btn-outline:hover {
+        background-color: var(--primary);
+        color: white;
+    }
+
+    /* ------------ Responsive ------------ */
+    @media (max-width: 768px) {
+        .dashboard-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .header-actions {
+            width: 100%;
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .search-container {
+            width: 100%;
+            
+        }
+        
+        .search-container input {
+            width: 100%;
+            background-color: gray;
+        }
+        
+        .description-cell {
+            max-width: 150px;
+        }
+        
+        .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 576px) {
+        th, td {
+            padding: 0.75rem 0.5rem;
+            font-size: 0.85rem;
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .action-buttons a {
+            width: 2rem;
+            height: 2rem;
+        }
+    }
+    </style>
+</body>
+</html>
