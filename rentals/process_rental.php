@@ -51,7 +51,8 @@ try {
     // Calculate rental duration in hours
     $startTime = new DateTime($rental_start);
     $endTime = new DateTime($rental_end);
-    $hours = (int) $startTime->diff($endTime)->h;
+    $interval = $startTime->diff($endTime);
+    $hours = ($interval->days * 24) + $interval->h;
 
     // Calculate total payment
     $rental_price = $itemData['rental_price'];

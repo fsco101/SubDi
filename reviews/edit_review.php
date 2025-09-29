@@ -82,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_review'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Review - Subdivision Management</title>
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="/subdisystem/style/style.css">
     <!-- Include fontawesome or other icon library for star ratings -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
@@ -175,3 +175,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_review'])) {
     <?php include '../includes/footer.php'; ?>
 </body>
 </html>
+
+
+<script>                /**
+                 * Page Action Handler - Global utility for managing page actions and reloads
+                 * Add this to all PHP files to ensure consistent user experience
+                 */
+ </script>
+ <?php include '../includes/footer.php'; ?>

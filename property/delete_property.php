@@ -11,7 +11,7 @@ $stmt = $conn->prepare($query);
 $stmt->bind_param("i", $property_id);
 
 if ($stmt->execute()) {
-    header("Location: show_property.php?msg=Property deleted successfully");
+    header("Location: index_properties.php?msg=Property deleted successfully");
     exit();
 } else {
     die("Error deleting property.");

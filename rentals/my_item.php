@@ -145,6 +145,10 @@ function getStatusBadgeClass($status) {
             text-transform: uppercase;
             letter-spacing: 0.5px;
             display: inline-block;
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            z-index: 2;
         }
         
         /* Date Time Display */
@@ -215,6 +219,12 @@ function getStatusBadgeClass($status) {
         <h2 class="text-center mb-2"><i class="bi bi-box-seam me-2"></i> My Rented Items</h2>
         <p class="text-center text-muted">View and manage your current and past rentals</p>
     </div>
+
+    <?php if (!empty($rentals)): ?>
+        <button class="btn btn-danger w-100 mb-3" onclick="deleteAllItems()">
+            <i class="bi bi-trash me-2"></i> Delete All Returned and Paid Items
+        </button>
+    <?php endif; ?>
 
     <?php if (empty($rentals)): ?>
         <div class="empty-state">
@@ -290,13 +300,24 @@ function getStatusBadgeClass($status) {
                             </ul>
                             
                             <!-- Action Button based on status -->
-                            <?php if (strtolower($rental['status']) === 'approved' && strtolower($rental['payment_status']) === 'pending'): ?>
+                            <?php if (strtolower($rental['status']) === 'approved' && strtolower($rental['payment_status']) === 'paid'): ?>
+                                <button class="btn btn-danger w-100 mt-3" onclick="returnItem(<?= $rental['rental_id']; ?>)">
+                                    <i class="bi bi-arrow-return-left me-2"></i> Return Item
+                                </button>
+                            <?php elseif (strtolower($rental['status']) === 'approved' && strtolower($rental['payment_status']) === 'pending'): ?>
                                 <a href="payment.php?rental_id=<?= $rental['rental_id']; ?>" class="btn btn-primary w-100 mt-3">
                                     <i class="bi bi-credit-card me-2"></i> Pay Now
                                 </a>
                             <?php elseif (strtolower($rental['status']) === 'pending'): ?>
                                 <button class="btn btn-outline-secondary w-100 mt-3" disabled>
                                     <i class="bi bi-hourglass me-2"></i> Awaiting Approval
+                                </button>
+                            <?php endif; ?>
+
+                            <!-- Delete Button for Returned and Paid Items -->
+                            <?php if (strtolower($rental['status']) === 'returned' || strtolower($rental['status']) === 'paid'): ?>
+                                <button class="btn btn-outline-danger w-100 mt-3" onclick="deleteItem(<?= $rental['rental_id']; ?>, '<?= strtolower($rental['status']); ?>')">
+                                    <i class="bi bi-trash me-2"></i> Delete Item
                                 </button>
                             <?php endif; ?>
                         </div>
@@ -329,7 +350,75 @@ document.addEventListener("click", function (event) {
 });
 
 console.log("Bootstrap version:", bootstrap?.Dropdown ? "Loaded" : "Not Loaded");
+
+function returnItem(rentalId) {
+    if (confirm("Are you sure you want to return this item?")) {
+        fetch("/subdisystem/rentals/return_rental.php", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `rental_id=${rentalId}`
+        })
+        .then(response => response.text())
+        .then(data => {
+            alert(data);
+            location.reload();
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("Something went wrong!");
+        });
+    }
+}
+
+function deleteItem(rentalId, status) {
+    if (status !== 'returned' && status !== 'paid') {
+        alert("Only returned or paid items can be deleted.");
+        return;
+    }
+    if (confirm("Are you sure you want to delete this item?")) {
+        fetch("/subdisystem/rentals/delete_rental.php", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `rental_id=${rentalId}`
+        })
+        .then(response => response.text())
+        .then(data => {
+            alert(data);
+            location.reload();
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("Something went wrong!");
+        });
+    }
+}
+
+function deleteAllItems() {
+    if (confirm("Are you sure you want to delete all returned and paid items?")) {
+        fetch("/subdisystem/rentals/delete_all_rentals.php", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `action=delete_all`
+        })
+        .then(response => response.text())
+        .then(data => {
+            alert(data);
+            location.reload();
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            alert("Something went wrong!");
+        });
+    }
+}
 </script>
 
 </body>
 </html>
+<?php include '../includes/footer.php'; ?>

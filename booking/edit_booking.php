@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $checkQuery = "SELECT * FROM bookings 
                    WHERE facility_id = ? AND booking_date = ? 
                    AND ((start_time < ? AND end_time > ?) OR (start_time < ? AND end_time > ?))
-                   AND booking_id != ?";
+                   AND booking_id != ? AND status NOT IN ('cancelled')";
     $stmt = $conn->prepare($checkQuery);
     $stmt->bind_param("isssssi", $facility_id, $booking_date, $end_time, $start_time, $start_time, $end_time, $booking_id);
     $stmt->execute();
@@ -120,158 +120,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <br>
 
         <button type="submit">Request Update</button>
-        <a href="view_bookings.php">Cancel</a>
+        <a href="view_bookings.php" class = "btn btn-cancel">Cancel</a>
     </form>
 </body>
 </html>
+<?php include '../includes/footer.php'; ?>
 
-
-<style> /* General Page Styling */
-body {
-    background-color: #121212;
-    color: #ffffff;
-    font-family: 'Arial', sans-serif;
-    margin: 0;
-    padding: 0;
-}
-
-/* Main Container - Wider Layout */
-.booking-container {
-    max-width: 1400px; /* Increased width for more space */
-    margin: 50px auto;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 30px;
-    padding: 30px;
-}
-
-/* Header Styling */
-.booking-header {
-    width: 100%;
-    text-align: center;
-    margin-bottom: 2rem;
-    border-bottom: 3px solid #ffffff;
-    padding-bottom: 1.5rem;
-    font-size: 28px;
-    font-weight: bold;
-}
-
-/* Booking Form Section */
-.booking-form {
-    flex: 1;
-    background-color: #1c1c1c;
-    border-radius: 12px;
-    padding: 40px;
-    box-shadow: 0px 6px 12px rgba(255, 255, 255, 0.1);
-    min-width: 500px;
-}
-
-/* Form Field Styling */
-.form-group {
-    margin-bottom: 20px;
-}
-
-label {
-    display: block;
-    font-weight: bold;
-    font-size: 18px;
-    margin-bottom: 8px;
-}
-
-select, input, textarea {
-    width: 100%;
-    padding: 15px;
-    border: none;
-    border-radius: 8px;
-    background: #2c2c2c;
-    color: #ffffff;
-    font-size: 18px;
-}
-
-textarea {
-    resize: none;
-    height: 120px;
-}
-
-select:focus, input:focus, textarea:focus {
-    border: 2px solid #17a2b8;
-    outline: none;
-}
-
-/* Large Button */
-button {
-    width: 100%;
-    background-color: #17a2b8;
-    color: white;
-    padding: 15px;
-    font-size: 20px;
-    font-weight: bold;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.3s, transform 0.2s;
-}
-
-button:hover {
-    background-color: #138496;
-    transform: scale(1.05);
-}
-
-/* Facility List - Displaying Options */
-.facility-list {
-    flex: 1.5;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    justify-content: center;
-}
-
-/* Facility Card Design */
-.facility-card {
-    flex: 1 1 calc(33% - 20px);
-    min-width: 300px;
-    background: #222;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 6px 12px rgba(255, 255, 255, 0.15);
-    text-align: center;
-    transition: transform 0.3s ease;
-}
-
-.facility-card:hover {
-    transform: translateY(-5px);
-}
-
-.facility-card.maintenance {
-    opacity: 0.6;
-    pointer-events: none;
-}
-
-/* Responsive Design */
-@media (max-width: 1200px) {
-    .booking-container {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .booking-form, .facility-list {
-        width: 100%;
-    }
-
-    .facility-card {
-        flex: 1 1 calc(50% - 20px);
-    }
-}
-
-@media (max-width: 768px) {
-    .facility-card {
-        flex: 1 1 100%;
-    }
-
-    .booking-form {
-        min-width: unset;
-    }
-}
-</style>
-</html>

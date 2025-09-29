@@ -10,6 +10,12 @@ if (!$user_id) {
     exit();
 }
 
+// Check database connection
+if ($conn->connect_error) {
+    echo json_encode(['success' => false, 'message' => 'Database connection failed', 'error' => $conn->connect_error]);
+    exit();
+}
+
 // Get JSON data from request
 $json_data = file_get_contents('php://input');
 $data = json_decode($json_data, true);
@@ -51,3 +57,4 @@ $deleteStmt->close();
 $verifyStmt->close();
 $conn->close();
 ?>
+

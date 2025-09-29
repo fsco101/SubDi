@@ -1,6 +1,7 @@
 <?php
 ob_start(); // Start output buffering
 include '../includes/header.php';
+include '../send_email.php';
 
 // Ensure only admins can access
 if ($_SESSION['role'] !== 'admin') {
@@ -68,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         // Send notification to users if enabled
         if ($send_notification) {
             // Get all users (excluding the current admin)
-            $userQuery = "SELECT user_id FROM users WHERE user_id != ?";
+            $userQuery = "SELECT user_id, email FROM users WHERE user_id != ?";
             $userStmt = $conn->prepare($userQuery);
             $userStmt->bind_param("i", $admin_id);
             $userStmt->execute();
@@ -78,15 +79,43 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $notifyQuery = "INSERT INTO notifications (user_id, related_id, related_type, message, created_at) VALUES (?, ?, 'admin_action', ?, NOW())";
             $notifyStmt = $conn->prepare($notifyQuery);
             
+            // Prepare email content
+            $emailSubject = "New Announcement: " . $title;
+            $emailContent = "<h2>" . htmlspecialchars($title) . "</h2>";
+            $emailContent .= "<div>" . nl2br(htmlspecialchars($content)) . "</div>";
+            
+            // Add image to email if available
+            if ($image_url) {
+                $fullImageUrl = "http://" . $_SERVER['HTTP_HOST'] . $image_url;
+                $emailContent .= "<div style='margin-top:20px;'><img src='$fullImageUrl' style='max-width:600px;' alt='Announcement Image'></div>";
+            }
+            
+            // Add view link to email
+            $viewUrl = "http://" . $_SERVER['HTTP_HOST'] . "/subdisystem/announcements/view_announcement_detail.php?id=" . $announcement_id;
+            $emailContent .= "<p style='margin-top:20px;'><a href='$viewUrl' style='padding:10px 15px;background-color:#3498db;color:white;text-decoration:none;border-radius:5px;'>View Full Announcement</a></p>";
+            
+            $emailSentCount = 0;
+            $notificationCount = 0;
+            
             while ($user = $userResult->fetch_assoc()) {
+                // Insert notification
                 $notifyStmt->bind_param("iis", $user['user_id'], $announcement_id, $notification_text);
-                $notifyStmt->execute();
+                if ($notifyStmt->execute()) {
+                    $notificationCount++;
+                }
+                
+                // Send email
+                if (sendEmail($user['email'], $emailSubject, $emailContent)) {
+                    $emailSentCount++;
+                } else {
+                    error_log("Failed to send announcement email to: " . $user['email']);
+                }
             }
             
             // Log notification activity
             $logQuery = "INSERT INTO admin_logs (admin_id, action, created_at) VALUES (?, ?, NOW())";
             $logStmt = $conn->prepare($logQuery);
-            $logAction = "Sent notification about announcement #$announcement_id to all users";
+            $logAction = "Sent $notificationCount notifications and $emailSentCount emails about announcement #$announcement_id to users";
             $logStmt->bind_param("is", $admin_id, $logAction);
             $logStmt->execute();
         }
@@ -106,6 +135,7 @@ ob_end_flush(); // Ensure no extra output is sent
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/subdisystem/style/style.css">
     <title>Create Announcement</title>
     <style>
         :root {
@@ -496,6 +526,15 @@ ob_end_flush(); // Ensure no extra output is sent
                 errorContainer.style.display = 'block';
             }
         });
+
+
+
+                        /**
+                 * Page Action Handler - Global utility for managing page actions and reloads
+                 * Add this to all PHP files to ensure consistent user experience
+                 */
+ 
     </script>
 </body>
 </html>
+<?php include '../includes/footer.php'; ?>

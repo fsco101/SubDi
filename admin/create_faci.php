@@ -54,6 +54,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/subdisystem/style/style.css">
+
     <title>Add New Facility</title>
     <style>
         body {
@@ -234,10 +236,16 @@
                 previewContainer.style.display = 'none';
             }
         }
+
+
+                        /**
+                 * Page Action Handler - Global utility for managing page actions and reloads
+                 * Add this to all PHP files to ensure consistent user experience
+                 */
+ 
     </script>
     
-    <!-- Footer would be included here -->
 </body>
 </html>
 
-    <?php include '../includes/footer.php'; ?>
+

@@ -1,8 +1,7 @@
 <?php
 ob_start();
-session_start();
-include '../includes/config.php';
 
+include '../includes/index_header.php';
 $error = "";
 
 // Check if form is submitted
@@ -53,43 +52,76 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 }
 ?>
 
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - Subdivision Management System</title>
+    <link rel="stylesheet" href="./subdisystem/style/style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            background-image: url('assets/img/subdivision-bg.jpg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
             margin: 0;
+            min-height: 100vh;
+            font-family: 'Poppins', 'Segoe UI', Arial, sans-serif;
             position: relative;
-            font-family: 'Segoe UI', Arial, sans-serif;
+            /* Removed overflow: hidden to allow footer to be shown */
         }
         
-        body::before {
-            content: "";
-            position: absolute;
+        #bg-video {
+            position: fixed;
+            top: 0;
+            left: 0;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            z-index: -2;
+            object-fit: cover;
+        }
+        
+        .overlay {
+            position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.65);
-            backdrop-filter: blur(6px);
+            background-color: rgba(0, 0, 0, 0.7);
             z-index: -1;
+        }
+        
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+            margin-bottom: 60px; /* Added margin for footer */
+        }
+        
+        .welcome-text {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.7);
+            max-width: 800px;
+        }
+        
+        .welcome-text h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .welcome-text p {
+            font-size: 1.2rem;
+            opacity: 0.9;
         }
         
         .login-card {
@@ -100,6 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             overflow: hidden;
             position: relative;
+            backdrop-filter: blur(10px);
         }
         
         .login-header {
@@ -121,9 +154,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         
         .form-control {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white;
+            background: rgba(255, 255, 255, 0.7); /* Increase background opacity for better visibility */
+            border: 1px solid rgba(0, 0, 0, 0.3); /* Darker border for better visibility */
+            color: #000000; 
             padding: 12px 15px;
             height: auto;
             border-radius: 8px;
@@ -131,14 +164,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         
         .form-control:focus {
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.9); /* Even more visible when focused */
             border-color: #17a2b8;
             box-shadow: 0 0 0 3px rgba(23, 162, 184, 0.25);
-            color: white;
+            color: #000000; /* Keep text black when focused */
         }
         
         .form-control::placeholder {
-            color: rgba(255, 255, 255, 0.6);
+            color: #333333; /* Darker placeholder text for better visibility */
         }
         
         .btn-login {
@@ -209,7 +242,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         }
         
         .form-label {
-            color: rgba(255, 255, 255, 0.8);
+            color:rgb(50, 48, 48); /* Change label color to white for better visibility against dark card */
+            font-weight: 500; /* Make labels bolder */
             font-size: 0.9rem;
             margin-bottom: 8px;
             display: block;
@@ -230,7 +264,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             left: 15px;
             top: 50%;
             transform: translateY(-50%);
-            color: rgba(255, 255, 255, 0.6);
+            color: #333333; /* Darker icon color for better visibility */
             font-size: 1.1rem;
             z-index: 10;
         }
@@ -238,57 +272,101 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         .icon-input {
             padding-left: 45px;
         }
+        
+        @media (max-width: 576px) {
+            .welcome-text h1 {
+                font-size: 1.8rem;
+            }
+            
+            .welcome-text p {
+                font-size: 1rem;
+            }
+            
+            .login-card {
+                max-width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
 
-<div class="login-card">
-    <div class="login-header">
-        <h2><i class="bi bi-buildings"></i> Subdivision Login</h2>
+<video id="bg-video" autoplay muted loop>
+    <source src="/subdisystem/dashboard image/background.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
+<div class="overlay"></div>
+
+<div class="main-container">
+    <div class="welcome-text">
+        <h1>Welcome to Subdivision Management System</h1>
+        <p>Manage your subdivision efficiently and effectively.</p>
     </div>
     
-    <div class="login-body">
-        <?php if (!empty($error)): ?>
-            <div class="error-message">
-                <i class="bi bi-exclamation-circle"></i> <?= $error; ?>
-            </div>
-        <?php endif; ?>
-
-        <form method="POST">
-            <div class="input-group">
-                <label for="email" class="form-label">Email Address</label>
-                <div class="position-relative">
-                    <i class="bi bi-envelope input-icon"></i>
-                    <input type="email" name="email" id="email" class="form-control icon-input" required placeholder="Enter your email">
-                </div>
-            </div>
-
-            <div class="input-group">
-                <label for="password" class="form-label">Password</label>
-                <div class="position-relative">
-                    <i class="bi bi-lock input-icon"></i>
-                    <input type="password" name="password" id="password" class="form-control icon-input" required placeholder="Enter your password">
-                </div>
-            </div>
-
-            <button type="submit" class="btn btn-login">
-                <i class="bi bi-box-arrow-in-right"></i> Sign In
-            </button>
-        </form>
-
-        <div class="divider">or</div>
+    <div class="login-card">
+        <div class="login-header">
+            <h2><i class="bi bi-buildings"></i> Login</h2>
+        </div>
         
-        <div class="links-section">
-            <a href="/subdisystem/user/forgot_password.php">
-                <i class="bi bi-key"></i> Forgot Password?
-            </a>
-            <a href="/subdisystem/user/signup.php">
-                <i class="bi bi-person-plus"></i> Sign Up
-            </a>
+        <div class="login-body">
+            <?php if (!empty($error)): ?>
+                <div class="error-message">
+                    <i class="bi bi-exclamation-circle"></i> <?= $error; ?>
+                </div>
+            <?php endif; ?>
+
+            <form method="POST">
+                <div class="input-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <div class="position-relative">
+                        <i class="bi bi-envelope input-icon"></i>
+                        <input type="email" name="email" id="email" class="form-control icon-input" required placeholder="Enter your email">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="password" class="form-label">Password</label>
+                    <div class="position-relative">
+                        <i class="bi bi-lock input-icon"></i>
+                        <input type="password" name="password" id="password" class="form-control icon-input" required placeholder="Enter your password">
+                        <i id="togglePassword" class="bi bi-eye-slash position-absolute" style="right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #000000;"></i>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-login">
+                    <i class="bi bi-box-arrow-in-right"></i> Sign In
+                </button>
+            </form>
+
+            <div class="divider">or</div>
+              
+            <div class="links-section">
+                <a href="/subdisystem/user/forgot_password.php">
+                    <i class="bi bi-key"></i> Forgot Password?
+                </a>
+                <a href="/subdisystem/user/signup.php">
+                    <i class="bi bi-person-plus"></i> Sign Up
+                </a> <!-- Fixed missing closing a tag -->
+            </div>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const passwordInput = document.getElementById('password');
+    const togglePassword = document.getElementById('togglePassword');
+    
+    togglePassword.addEventListener('click', function() {
+        const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+        passwordInput.setAttribute('type', type);
+        this.classList.toggle('bi-eye');
+        this.classList.toggle('bi-eye-slash');
+    });
+});
+</script>
+
+<?php include '../includes/footer.php'; ?>
 </body>
 </html>

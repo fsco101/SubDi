@@ -1,6 +1,12 @@
 <?php
 include '../includes/header.php';
 
+
+if (!isset($_SESSION['user_id'])) {
+    header("Location: /subdisystem/user/login.php?message=login_required");
+    exit();
+}
+
 $user_id = $_SESSION['user_id'];
 
 $query = "SELECT b.booking_id, a.name AS facility, b.booking_date, b.purpose, b.status, b.payment_status, b.start_time, b.end_time
@@ -20,15 +26,11 @@ $bookings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     <title>My Bookings</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/subdisystem/style/style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
- body {
-    background-color: #f9fafb;
-    color: #333;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    padding: 20px;
-}
+
 
 .bookings-container {
     max-width: 1200px;
@@ -199,12 +201,21 @@ $bookings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                                     </td>
                                     <td data-label="Actions">
                                         <div class="action-btns">
-                                            <a href="edit_booking.php?id=<?= $booking['booking_id']; ?>" class="btn btn-action btn-edit">
-                                                <i class="fas fa-edit"></i> Edit
-                                            </a>
-                                            <button onclick="cancelBooking(<?= $booking['booking_id']; ?>)" class="btn btn-action btn-cancel">
-                                                <i class="fas fa-times"></i> Cancel
-                                            </button>
+                                            <?php
+                                            $currentDateTime = new DateTime();
+                                            $bookingEndDateTime = new DateTime($booking['booking_date'] . ' ' . $booking['end_time']);
+                                            if ($bookingEndDateTime < $currentDateTime && $booking['status'] === 'confirmed' && $booking['payment_status'] === 'paid'): ?>
+                                                <button onclick="deleteBooking(<?= $booking['booking_id']; ?>)" class="btn btn-action btn-danger">
+                                                    <i class="fas fa-trash"></i> Delete
+                                                </button>
+                                            <?php else: ?>
+                                                <a href="edit_booking.php?id=<?= $booking['booking_id']; ?>" class="btn btn-action btn-edit">
+                                                    <i class="fas fa-edit"></i> Edit
+                                                </a>
+                                                <button onclick="cancelBooking(<?= $booking['booking_id']; ?>)" class="btn btn-action btn-cancel">
+                                                    <i class="fas fa-times"></i> Cancel
+                                                </button>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                 </tr>
@@ -236,6 +247,20 @@ $bookings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
                 .catch(error => {
                     console.error("Error:", error);
                     alert("Error cancelling booking. Please try again.");
+                });
+            }
+        }
+        function deleteBooking(bookingId) {
+            if (confirm("Are you sure you want to delete this booking?")) {
+                fetch('delete_booking.php?id=' + bookingId, { method: 'GET' })
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById("row-" + bookingId).remove();
+                    alert("Booking Deleted Successfully");
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert("Error deleting booking. Please try again.");
                 });
             }
         }
@@ -303,3 +328,4 @@ $bookings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     </script>
 </body>
 </html>
+<?php include '../includes/footer.php'; ?>

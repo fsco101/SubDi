@@ -9,6 +9,12 @@ if (!$user_id) {
     exit();
 }
 
+// Check database connection
+if ($conn->connect_error) {
+    echo json_encode(['success' => false, 'message' => 'Database connection failed', 'error' => $conn->connect_error]);
+    exit();
+}
+
 // Handle AJAX requests for actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $response = ['success' => false, 'message' => ''];
@@ -25,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $response['message'] = 'Notification deleted successfully.';
         } else {
             $response['message'] = 'Failed to delete notification.';
+            $response['error'] = $conn->error;
         }
     }
     
@@ -39,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $response['message'] = 'All notifications cleared successfully.';
         } else {
             $response['message'] = 'Failed to clear notifications.';
+            $response['error'] = $conn->error;
         }
     }
     
@@ -53,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $response['message'] = 'All notifications marked as read.';
         } else {
             $response['message'] = 'Failed to mark notifications as read.';
+            $response['error'] = $conn->error;
         }
     }
     
@@ -205,7 +214,7 @@ $currentPageItems = array_slice($notifications, $offset, $itemsPerPage);
                             <div class="list-group-item notification-item <?= $notif['is_read'] ? '' : 'notification-unread' ?>" id="notification-<?= $notif['notification_id'] ?>">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <div class="notification-message">
-                                        <?= htmlspecialchars($notif['message']); ?>
+                                        <?= $notif['message']; ?>
                                     </div>
                                     <div class="notification-actions">
                                         <button type="button" class="btn btn-sm btn-outline-danger delete-notification" 
@@ -279,39 +288,6 @@ $currentPageItems = array_slice($notifications, $offset, $itemsPerPage);
             }, 5000);
         }
         
-        // Helper function to perform AJAX requests
-        function performAction(action, data = {}) {
-            // Combine the action with any additional data
-            const formData = new FormData();
-            formData.append('action', action);
-            
-            // Add any additional data
-            for (const key in data) {
-                formData.append(key, data[key]);
-            }
-            
-            // Send the request
-            return fetch('notification.php', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showToast(data.message, 'success');
-                    return true;
-                } else {
-                    showToast(data.message || 'Action failed', 'danger');
-                    return false;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('An error occurred. Please try again.', 'danger');
-                return false;
-            });
-        }
-        
         // Delete a single notification
         document.addEventListener('click', function(e) {
             if (e.target.closest('.delete-notification')) {
@@ -374,7 +350,7 @@ $currentPageItems = array_slice($notifications, $offset, $itemsPerPage);
                     });
             }
         });
-        
+
         // Update notification badge in header
         function updateNotificationBadge() {
             fetch('/subdisystem/notifications/check_unread.php')
@@ -393,6 +369,34 @@ $currentPageItems = array_slice($notifications, $offset, $itemsPerPage);
         document.addEventListener("DOMContentLoaded", function() {
             setTimeout(updateNotificationBadge, 1000);
         });
+
+        function performAction(action, data = {}) {
+            // Combine the action with any additional data
+            const formData = new FormData();
+            formData.append('action', action);
+            
+            // Add any additional data
+            for (const key in data) {
+                formData.append(key, data[key]);
+            }
+            
+            // Send the request
+            return fetch('notification.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast(data.message, 'success');
+                    return true;
+                } else {
+                    showToast(data.message || 'Action failed', 'danger');
+                    return false;
+                }
+            });
+        }
     </script>
 </body>
 </html>
+<?php include '../includes/footer.php'; ?>

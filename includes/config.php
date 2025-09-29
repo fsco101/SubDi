@@ -1,7 +1,7 @@
 <?php
 $servername = "localhost";  // Your server name or IP
 $username = "root";         // Your database username
-$password = "";             // Your database password
+$password = "";        // Your database password
 $dbname = "subdisystem";  // Your database name
 
 // Create connection

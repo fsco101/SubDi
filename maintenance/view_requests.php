@@ -47,7 +47,6 @@ $statusClasses = [
 $pageTitle = "Service Requests Dashboard";
 ?>
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -56,6 +55,565 @@ $pageTitle = "Service Requests Dashboard";
     <title><?= $pageTitle ?></title>
     <link rel="stylesheet" href="../style/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+    /* ------------ Base & Reset ------------ */
+    :root {
+        --primary: #3b82f6;
+        --primary-dark: #2563eb;
+        --primary-light: #dbeafe;
+        --secondary: #64748b;
+        --danger: #ef4444;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --info: #0ea5e9;
+        --light: #f8fafc;
+        --dark: #1e293b;
+        --background: #f1f5f9;
+        --border: #e2e8f0;
+        --text: #334155;
+        --text-light: #64748b;
+        --transition: all 0.3s ease;
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+        --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --radius: 0.5rem;
+    }
+
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        background-color: var(--background);
+        color: var(--text);
+        font-family: 'Poppins', 'Segoe UI', sans-serif;
+        line-height: 1.6;
+    }
+
+    /* ------------ Layout & Container ------------ */
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+        margin-top: 80px; /* Space for fixed header */
+    }
+
+    /* ------------ Header ------------ */
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        background-color: white;
+        padding: 1.5rem 2rem;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+    }
+
+    .dashboard-header h1 {
+        font-size: 1.8rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--dark);
+    }
+
+    .dashboard-header h1 i {
+        color: var(--primary);
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    /* ------------ Search Bar ------------ */
+    .search-container {
+        position: relative;
+    }
+
+    .search-container input {
+        background-color: var(--light);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 0.75rem 1rem 0.75rem 2.5rem;
+        color: var(--text);
+        font-size: 0.9rem;
+        width: 250px;
+        transition: var(--transition);
+    }
+
+    .search-container input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-light);
+    }
+
+    /* ------------ Table Styling ------------ */
+    .table-container {
+        overflow-x: auto;
+        border-radius: var(--radius);
+        background-color: white;
+        box-shadow: var(--shadow);
+        margin-top: 1.5rem;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    thead {
+        background-color: var(--light);
+        border-bottom: 2px solid var(--border);
+    }
+
+    th {
+        padding: 1.25rem 1rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var (--text);
+        cursor: pointer;
+        background-color: #f8fafc;
+        position: relative;
+    }
+
+    th i {
+        margin-left: 0.5rem;
+        font-size: 0.8rem;
+        color: var(--text-light);
+        transition: var(--transition);
+    }
+
+
+    td {
+        padding: 1.25rem 1rem;
+        font-size: 0.95rem;
+        color: var(--text);
+        background-color: white;
+        vertical-align: middle;
+    }
+
+    /* Column widths */
+    th:nth-child(1), td:nth-child(1) { width: 15%; }
+    th:nth-child(2), td:nth-child(2) { width: 15%; }
+    th:nth-child(3), td:nth-child(3) { width: 30%; }
+    th:nth-child(4), td:nth-child(4) { width: 15%; }
+    th:nth-child(5), td:nth-child(5) { width: 15%; }
+    th:nth-child(6), td:nth-child(6) { width: 10%; }
+
+    /* ------------ Description cell handling ------------ */
+    .description-cell {
+        max-width: 300px;
+    }
+
+    .truncate-text {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .truncate-text:hover::after {
+        content: attr(title);
+        position: absolute;
+        left: 0;
+        top: 100%;
+        background-color: white;
+        color: var(--text);
+        padding: 0.75rem;
+        border-radius: var(--radius);
+        z-index: 10;
+        width: 300px;
+        white-space: normal;
+        font-size: 0.85rem;
+        box-shadow: var(--shadow);
+        border: 1px solid var(--border);
+    }
+
+    /* ------------ Status Badges ------------ */
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.4rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-transform: capitalize;
+        line-height: 1;
+    }
+
+    .status-badge::before {
+        content: "";
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 6px;
+    }
+
+    .status-pending {
+        background-color: #fff7ed;
+        color: var(--warning);
+        border: 1px solid #ffedd5;
+    }
+
+    .status-pending::before {
+        background-color: var(--warning);
+    }
+
+    .status-progress {
+        background-color: #eff6ff;
+        color: var(--info);
+        border: 1px solid #dbeafe;
+    }
+
+    .status-progress::before {
+        background-color: var(--info);
+    }
+
+    .status-completed {
+        background-color: #ecfdf5;
+        color: var(--success);
+        border: 1px solid #d1fae5;
+    }
+
+    .status-completed::before {
+        background-color: var(--success);
+    }
+
+    .status-cancelled {
+        background-color: #fef2f2;
+        color: var(--danger);
+        border: 1px solid #fee2e2;
+    }
+
+    .status-cancelled::before {
+        background-color: var(--danger);
+    }
+
+    /* ------------ Action Buttons ------------ */
+    .action-buttons {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .action-buttons a {
+        width: 2.5rem;
+        height: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius);
+        transition: var(--transition);
+    }
+
+    .edit-btn {
+        background-color: #fff7ed;
+        color: var(--warning);
+    }
+
+    .edit-btn:hover {
+        background-color: var(--warning);
+        color: white;
+    }
+
+    .delete-btn {
+        background-color: #fef2f2;
+        color: var(--danger);
+    }
+
+    .delete-btn:hover {
+        background-color: var(--danger);
+        color: white;
+    }
+
+    /* ------------ Empty State ------------ */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 1rem;
+        background-color: white;
+        border-radius: var (--radius);
+        box-shadow: var(--shadow);
+        margin-top: 1.5rem;
+    }
+
+    .empty-state i {
+        color: var(--text-light);
+        margin-bottom: 1.5rem;
+        opacity: 0.7;
+    }
+
+    .empty-state p {
+        color: var(--text);
+        font-size: 1.1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    /* ------------ Modal ------------ */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-content {
+        background-color: white;
+        margin: 15% auto;
+        padding: 2rem;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-lg);
+        width: 90%;
+        max-width: 500px;
+        animation: modalFade 0.3s;
+    }
+
+    @keyframes modalFade {
+        from {opacity: 0; transform: translateY(-20px);}
+        to {opacity: 1; transform: translateY(0);}
+    }
+
+    .close-modal {
+        color: var(--text-light);
+        float: right;
+        font-size: 1.5rem;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .close-modal:hover {
+        color: var(--dark);
+    }
+
+    .modal h3 {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--dark);
+        margin-bottom: 1rem;
+        font-weight: 600;
+    }
+
+    .modal h3 i {
+        color: var(--danger);
+    }
+
+    .modal p {
+        margin-bottom: 1.5rem;
+        color: var(--text);
+    }
+
+    .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 1rem;
+    }
+
+    /* ------------ Buttons ------------ */
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        border-radius: var(--radius);
+        font-weight: 500;
+        font-size: 0.95rem;
+        cursor: pointer;
+        text-decoration: none;
+        transition: var(--transition);
+        border: none;
+    }
+
+    .btn-primary {
+        background-color: var(--primary);
+        color: white;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn-primary:hover {
+        background-color: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow);
+    }
+
+    .btn-secondary {
+        background-color: white;
+        color: var(--dark);
+        border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+        background-color: var(--light);
+        border-color: var(--text-light);
+    }
+
+    .btn-danger {
+        background-color: var(--danger);
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background-color: #b91c1c;
+    }
+
+    .btn-outline {
+        background-color: transparent;
+        border: 1px solid var(--primary);
+        color: var(--primary);
+    }
+
+    .btn-outline:hover {
+        background-color: var(--primary);
+        color: white;
+    }
+
+    /* ------------ Pagination ------------ */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 2rem;
+    }
+
+    .pagination-item {
+        width: 2.5rem;
+        height: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        background-color: white;
+        color: var(--text);
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .pagination-item:hover, .pagination-item.active {
+        background-color: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+
+    .pagination-item.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    /* ------------ Responsive ------------ */
+    @media (max-width: 992px) {
+        .container {
+            padding: 1.5rem;
+        }
+        
+        .dashboard-header {
+            padding: 1.25rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        
+        .header-actions {
+            width: 100%;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+        }
+        
+        .search-container {
+            width: 100%;
+        }
+        
+        .search-container input {
+            width: 100%;
+        }
+        
+        .description-cell {
+            max-width: 200px;
+        }
+        
+        .btn {
+            width: 100%;
+        }
+        
+        .table-container {
+            border-radius: var(--radius);
+            overflow-x: auto;
+        }
+        
+        table {
+            min-width: 800px;
+        }
+        
+        .empty-state {
+            padding: 3rem 1rem;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .container {
+            padding: 1rem;
+        }
+        
+        .dashboard-header {
+            padding: 1rem;
+        }
+        
+        .dashboard-header h1 {
+            font-size: 1.5rem;
+        }
+        
+        th, td {
+            padding: 0.75rem 0.5rem;
+            font-size: 0.85rem;
+        }
+        
+        .status-badge {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.75rem;
+        }
+        
+        .action-buttons {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .action-buttons a {
+            width: 2rem;
+            height: 2rem;
+        }
+    }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -108,9 +666,11 @@ $pageTitle = "Service Requests Dashboard";
                                     <td><?= date('M d, Y', strtotime($request['created_at'])); ?></td>
                                     <td>
                                         <div class="action-buttons">
-                                            <a href="edit_request.php?id=<?= $request['request_id']; ?>" class="edit-btn" title="Edit request">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
+                                            <?php if (strtolower($request['status']) !== 'completed'): ?>
+                                                <a href="edit_request.php?id=<?= $request['request_id']; ?>" class="edit-btn" title="Edit request">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            <?php endif; ?>
                                             <a href="javascript:void(0)" class="delete-btn" 
                                                onclick="confirmDelete(<?= $request['request_id']; ?>)" title="Delete request">
                                                 <i class="fas fa-trash"></i>
@@ -122,6 +682,17 @@ $pageTitle = "Service Requests Dashboard";
                         </tbody>
                     </table>
                 </div>
+
+                <!-- Add pagination if needed -->
+                <?php if (count($requests) > 10): ?>
+                <div class="pagination">
+                    <a href="#" class="pagination-item disabled"><i class="fas fa-chevron-left"></i></a>
+                    <a href="#" class="pagination-item active">1</a>
+                    <a href="#" class="pagination-item">2</a>
+                    <a href="#" class="pagination-item">3</a>
+                    <a href="#" class="pagination-item"><i class="fas fa-chevron-right"></i></a>
+                </div>
+                <?php endif; ?>
             <?php endif; ?>
         </main>
     </div>
@@ -176,452 +747,48 @@ $pageTitle = "Service Requests Dashboard";
                 modal.style.display = 'none';
             }
         }
+        
+        // Table sorting functionality
+        document.querySelectorAll('th').forEach((header, index) => {
+            if (index !== 2 && index !== 5) { // Skip description and actions columns
+                header.addEventListener('click', () => {
+                    sortTable(index);
+                });
+            }
+        });
+        
+        function sortTable(column) {
+            const table = document.getElementById('requestsTable');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // Get the current direction
+            const currentDir = table.dataset.sortDir === 'asc' ? 'desc' : 'asc';
+            table.dataset.sortDir = currentDir;
+            
+            // Sort the rows
+            rows.sort((a, b) => {
+                const cellA = a.querySelectorAll('td')[column].textContent.trim();
+                const cellB = b.querySelectorAll('td')[column].textContent.trim();
+                
+                if (currentDir === 'asc') {
+                    return cellA.localeCompare(cellB);
+                } else {
+                    return cellB.localeCompare(cellA);
+                }
+            });
+            
+            // Clear and re-append rows
+            while (tbody.firstChild) {
+                tbody.removeChild(tbody.firstChild);
+            }
+            
+            rows.forEach(row => {
+                tbody.appendChild(row);
+            });
+        }
     });
     </script>
-
-    <style>
-    /* ------------ Base & Reset ------------ */
-    :root {
-        --primary: #17a2b8;
-        --primary-dark: #138496;
-        --secondary: #6c757d;
-        --danger: #dc3545;
-        --success: #28a745;
-        --warning: #ffc107;
-        --info: #17a2b8;
-        --dark: #121212;
-        --darker: #0a0a0a;
-        --medium-dark: #1c1c1c;
-        --light-dark: #2a2a2a;
-        --border: #333;
-        --text: #ffffff;
-        --text-secondary: #b0b0b0;
-        --transition: all 0.3s ease;
-        --shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
-
-    * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-    }
-
-    body {
-        background-color: white;
-        color: var(--text);
-        font-family: 'Inter', 'Segoe UI', sans-serif;
-        margin: 0;
-        padding: 0;
-        line-height: 1.6;
-
-    }
-
-    /* ------------ Layout & Container ------------ */
-    .container {
-        max-width: 1200px;
-        margin: 5 auto;
-        padding: 2rem;
-        margin-top: 12.7px; /* Moves the container down by half an inch */
-    }
-
-
-    /* ------------ Header ------------ */
-    .dashboard-header {
-
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-        flex-wrap: wrap;
-        gap: 10rem;
-    }
-
-
-    .dashboard-header h1 {
-        font-size: 2rem;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        color: black;
-        text-transform: none;
-        border: none;
-    }
-
-    .dashboard-header h1 i {
-        color: var(--primary);
-    }
-
-    .header-actions {
-        display: flex;
-        gap: 1rem;
-        align-items: center;
-    }
-
-    /* ------------ Search Bar ------------ */
-    .search-container {
-        position: relative;
-    }
-
-    .search-container input {
-        background-color: white;
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        padding: 0.75rem 1rem 0.75rem 2.5rem;
-        color: black;
-        font-size: 0.9rem;
-        width: 250px;
-        transition: var(--transition);
-    }
-
-    .search-container input:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 2px rgba(23, 162, 184, 0.25);
-    }
-
-    .search-icon {
-        position: absolute;
-        left: 0.75rem;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--text-secondary);
-    }
-
-    /* ------------ Table Styling ------------ */
-    .table-container {
-        overflow-x: auto;
-        border-radius: 8px;
-        background-color: var(--medium-dark);
-        box-shadow: var(--shadow);
-
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        text-align: left;
-    }
-
-    thead {
-        background-color: var(--light-dark);
-        border-bottom: 2px solid var(--border);
-    }
-
-    th {
-        padding: 1rem;
-        font-weight: 600;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: black;
-        cursor: pointer;
-        background-color: white;
-    }
-
-    th i {
-        margin-left: 0.5rem;
-        font-size: 0.8rem;
-        color: var(--text-secondary);
-        transition: var(--transition);
-    }
-
-    th:hover i {
-        color: var(--primary);
-    }
-
-    tbody tr {
-        border-bottom: 1px solid var(--border);
-        transition: var(--transition);
-    }
-
-    tbody tr:hover {
-        background-color: var(--light-dark);
-    }
-
-    td {
-        padding: 1rem;
-        font-size: 0.95rem;
-        color: black;
-        background-color: white;
-    }
-
-    /* ------------ Description cell handling ------------ */
-    .description-cell {
-        max-width: 300px;
-    }
-
-    .truncate-text {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        cursor: pointer;
-    }
-
-    /* ------------ Status Badges ------------ */
-    .status-badge {
-        display: inline-block;
-        padding: 0.35rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 500;
-        text-transform: capitalize;
-    }
-
-    .status-pending {
-        background-color: rgba(255, 193, 7, 0.2);
-        color: var(--warning);
-        border: 1px solid rgba(255, 193, 7, 0.3);
-    }
-
-    .status-progress {
-        background-color: rgba(23, 162, 184, 0.2);
-        color: var(--info);
-        border: 1px solid rgba(23, 162, 184, 0.3);
-    }
-
-    .status-completed {
-        background-color: rgba(40, 167, 69, 0.2);
-        color: var(--success);
-        border: 1px solid rgba(40, 167, 69, 0.3);
-    }
-
-    .status-cancelled {
-        background-color: rgba(220, 53, 69, 0.2);
-        color: var(--danger);
-        border: 1px solid rgba(220, 53, 69, 0.3);
-    }
-
-    /* ------------ Action Buttons ------------ */
-    .action-buttons {
-        display: flex;
-        gap: 0.75rem;
-    }
-
-    .action-buttons a {
-        width: 2.5rem;
-        height: 2.5rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-radius: 6px;
-        transition: var(--transition);
-    }
-
-
-    .edit-btn {
-        background-color: rgba(255, 193, 7, 0.15);
-        color: var(--warning);
-    }
-
-    .edit-btn:hover {
-        background-color: rgba(255, 193, 7, 0.25);
-    }
-
-    .delete-btn {
-        background-color: rgba(220, 53, 69, 0.15);
-        color: var(--danger);
-    }
-
-    .delete-btn:hover {
-        background-color: rgba(220, 53, 69, 0.25);
-    }
-
-    /* ------------ Empty State ------------ */
-    .empty-state {
-        text-align: center;
-        padding: 4rem 1rem;
-        background-color: white;
-        border-radius: 8px;
-        box-shadow: var(--shadow);
-
-    }
-
-    .empty-state i {
-        color: gray;
-        margin-bottom: 1rem;
-    }
-
-    .empty-state p {
-        color: black;
-        font-size: 1.1rem;
-        margin-bottom: 1.5rem;
-    }
-
-
-
-    /* ------------ Modal ------------ */
-    .modal {
-        display: none;
-        position: fixed;
-        z-index: 999;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        overflow: auto;
-        background-color: rgba(255, 255, 255, 0.6);
-        backdrop-filter: blur(4px);
-    }
-
-    .modal-content {
-        background-color:white;
-        margin: 15% auto;
-        padding: 2rem;
-        border-radius: 8px;
-        box-shadow: var(--shadow);
-        width: 90%;
-        max-width: 500px;
-        animation: modalFade 0.3s;
-    }
-
-    @keyframes modalFade {
-        from {opacity: 0; transform: translateY(-20px);}
-        to {opacity: 1; transform: translateY(0);}
-    }
-
-    .close-modal {
-        color: var(--text-secondary);
-        float: right;
-        font-size: 1.5rem;
-        cursor: pointer;
-        transition: var(--transition);
-    }
-
-    .close-modal:hover {
-        color: var(--text);
-    }
-
-    .modal h3 {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        color: var(--text);
-        margin-bottom: 1rem;
-    }
-
-    .modal h3 i {
-        color: var(--danger);
-    }
-
-    .modal p {
-        margin-bottom: 1.5rem;
-        color: var(--text-secondary);
-    }
-
-    .modal-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 1rem;
-    }
-
-    /* ------------ Buttons ------------ */
-    .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        padding: 0.75rem 1.5rem;
-        border-radius: 6px;
-        font-weight: 500;
-        font-size: 0.95rem;
-        cursor: pointer;
-        text-decoration: none;
-        transition: var(--transition);
-        border: none;
-    }
-
-    .btn-primary {
-        background-color: var(--primary);
-        color: white;
-    }
-
-    .btn-primary:hover {
-        background-color: var(--primary-dark);
-    }
-
-    .btn-secondary {
-        background-color: var(--secondary);
-        color: white;
-    }
-
-    .btn-secondary:hover {
-        background-color: #5a6268;
-    }
-
-    .btn-danger {
-        background-color: var(--danger);
-        color: white;
-    }
-
-    .btn-danger:hover {
-        background-color: #c82333;
-    }
-
-    .btn-outline {
-        background-color: transparent;
-        border: 1px solid var(--primary);
-        color: var(--primary);
-    }
-
-    .btn-outline:hover {
-        background-color: var(--primary);
-        color: white;
-    }
-
-    /* ------------ Responsive ------------ */
-    @media (max-width: 768px) {
-        .dashboard-header {
-            flex-direction: column;
-            align-items: flex-start;
-        }
-        
-        .header-actions {
-            width: 100%;
-            flex-direction: column;
-            align-items: stretch;
-        }
-        
-        .search-container {
-            width: 100%;
-            
-        }
-        
-        .search-container input {
-            width: 100%;
-            background-color: gray;
-        }
-        
-        .description-cell {
-            max-width: 150px;
-        }
-        
-        .btn {
-            width: 100%;
-            justify-content: center;
-        }
-    }
-
-    @media (max-width: 576px) {
-        th, td {
-            padding: 0.75rem 0.5rem;
-            font-size: 0.85rem;
-        }
-        
-        .status-badge {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.75rem;
-        }
-        
-        .action-buttons {
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-        
-        .action-buttons a {
-            width: 2rem;
-            height: 2rem;
-        }
-    }
-    </style>
 </body>
 </html>
+<?php include '../includes/footer.php'; ?>

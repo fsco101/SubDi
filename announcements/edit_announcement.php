@@ -104,18 +104,10 @@ ob_end_flush(); // Ensure no extra output is sent
         <input type="file" name="image" accept="image/*">
 
         <button type="submit">Update Announcement</button>
-        <a href="view_announcement.php">Cancel</a>
-    </form>
+        <a href="view_announcement.php" class="btn btn-cancel">Cancel</a>    </form>
 </body>
 
 <style> /* General Page Styling */
-body {
-    background-color: #121212;
-    color: #ffffff;
-    font-family: 'Arial', sans-serif;
-    margin: 0;
-    padding: 0;
-}
 
 /* Main Container - Wider Layout */
 .booking-container {
@@ -166,8 +158,8 @@ select, input, textarea {
     padding: 15px;
     border: none;
     border-radius: 8px;
-    background: #2c2c2c;
-    color: #ffffff;
+    background:rgb(227, 223, 223);
+    color:rgb(0, 0, 0);
     font-size: 18px;
 }
 
@@ -224,3 +216,4 @@ button:hover {
 }
 </style>
 </html>
+<?php include '../includes/footer.php'; ?>

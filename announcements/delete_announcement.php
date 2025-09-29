@@ -21,4 +21,6 @@ if ($stmt->execute()) {
     } else {
         die("Error deleting announcement.");
     }
+
     ?>
+

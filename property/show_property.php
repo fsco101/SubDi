@@ -1,8 +1,13 @@
 <?php
 include '../includes/header.php';
 
-// Fetch available properties
-$query = "SELECT * FROM properties WHERE status = 'available' OR status = 'for rent'";
+// Fetch available properties with user (agent) information
+$query = "SELECT p.*, GROUP_CONCAT(pi.image_url) AS images, u.f_name, u.l_name, u.email, u.phone_number, u.image_url as user_image, u.role 
+          FROM properties p 
+          LEFT JOIN property_images pi ON p.property_id = pi.property_id 
+          JOIN users u ON p.user_id = u.user_id 
+          WHERE p.status = 'available' OR p.status = 'for rent' 
+          GROUP BY p.property_id";
 $result = $conn->query($query);
 $properties = $result->fetch_all(MYSQLI_ASSOC);
 
@@ -22,9 +27,12 @@ foreach ($properties as $property) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Premium Properties For Sale</title>
+    <link rel="stylesheet" href="/subdisystem/style/style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../style/style.css">
+   
+
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
@@ -64,11 +72,17 @@ foreach ($properties as $property) {
                     <div class="property-badge"><?= ucfirst($property['type']) ?></div>
                     <div class="property-favorite"><i class="far fa-heart"></i></div>
                     <div class="property-image">
-                        <img src="<?= htmlspecialchars($property['image_url']); ?>" alt="<?= htmlspecialchars($property['title']); ?>">
+                        <?php 
+                        $images = explode(',', $property['images']);
+                        foreach ($images as $index => $image): 
+                            if ($index === 0): ?>
+                                <img src="<?= htmlspecialchars($image); ?>" alt="<?= htmlspecialchars($property['title']); ?>">
+                            <?php endif; 
+                        endforeach; ?>
                     </div>
                     <div class="property-details">
                         <h3 class="property-title"><?= htmlspecialchars($property['title']); ?></h3>
-                        <div class="property-price">$<?= number_format($property['price'], 0); ?></div>
+                        <div class="property-price">₱<?= number_format($property['price'], 0); ?></div>
                         <div class="property-actions">
                             <button class="btn-view-details" onclick="openModal('modal-<?= $property['property_id']; ?>')">View Details</button>
                         </div>
@@ -82,19 +96,14 @@ foreach ($properties as $property) {
                         
                         <div class="modal-gallery">
                             <div class="main-image">
-                                <img src="<?= htmlspecialchars($property['image_url']); ?>" alt="<?= htmlspecialchars($property['title']); ?>">
+                                <img src="<?= htmlspecialchars($images[0]); ?>" alt="<?= htmlspecialchars($property['title']); ?>">
                             </div>
                             <div class="thumbnail-strip">
-                                <div class="thumbnail active">
-                                    <img src="<?= htmlspecialchars($property['image_url']); ?>" alt="Main view">
-                                </div>
-                                <!-- Placeholder thumbnails - in a real app, you'd have multiple images per property -->
-                                <div class="thumbnail">
-                                    <img src="<?= htmlspecialchars($property['image_url']); ?>" alt="Other view">
-                                </div>
-                                <div class="thumbnail">
-                                    <img src="<?= htmlspecialchars($property['image_url']); ?>" alt="Other view">
-                                </div>
+                                <?php foreach ($images as $image): ?>
+                                    <div class="thumbnail">
+                                        <img src="<?= htmlspecialchars($image); ?>" alt="Thumbnail">
+                                    </div>
+                                <?php endforeach; ?>
                             </div>
                         </div>
                         
@@ -103,16 +112,45 @@ foreach ($properties as $property) {
                                 <div>
                                     <h2 class="modal-title"><?= htmlspecialchars($property['title']); ?></h2>
                                 </div>
-                                <div class="modal-price">$<?= number_format($property['price'], 0); ?></div>
+                                <div class="modal-price">₱<?= number_format($property['price'], 0); ?></div>
                             </div>
-                            
-                           
                             
                             <div class="modal-section">
                                 <h3>Property Description</h3>
                                 <p><?= htmlspecialchars($property['description']); ?></p>
                             </div>
                             
+                            <!-- Agent Information Section -->
+                            <div class="modal-section">
+                                <h3>Property Agent</h3>
+                                <div class="modal-agent">
+                                    <div class="agent-photo">
+                                        <?php if (!empty($property['user_image'])): ?>
+                                            <img src="<?= htmlspecialchars($property['user_image']); ?>" alt="Agent Photo">
+                                        <?php else: ?>
+                                            <img src="/subdisystem/assets/img/default-profile.jpg" alt="Agent Photo">
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="agent-info">
+                                        <h4><?= htmlspecialchars($property['f_name'] . ' ' . $property['l_name']); ?></h4>
+                                        
+                                        <div class="agent-role">
+                                            <span class="badge badge-<?= $property['role'] ?>">
+                                                <?= ucfirst(htmlspecialchars($property['role'])); ?>
+                                            </span>
+                                        </div>
+                                        
+                                        <div class="agent-contact-info">
+                                            <?php if (!empty($property['phone_number'])): ?>
+                                                <p><i class="fas fa-phone-alt"></i> <?= htmlspecialchars($property['phone_number']); ?></p>
+                                            <?php endif; ?>
+                                            <p><i class="fas fa-envelope"></i> <?= htmlspecialchars($property['email']); ?></p>
+                                        </div>
+                                        
+
+                                    </div>
+                                </div>
+                            </div>
                             
                         </div>
                     </div>
@@ -124,6 +162,12 @@ foreach ($properties as $property) {
             <i class="fas fa-home"></i>
             <h3>No properties found</h3>
             <p>Try adjusting your filters to find more properties</p>
+        </div>
+        
+        <!-- Add this fullscreen view container after the property-grid div -->
+        <div class="fullscreen-view">
+            <span class="fullscreen-close"><i class="fas fa-times"></i></span>
+            <img src="" alt="Fullscreen property view" class="fullscreen-image">
         </div>
     </div>
 
@@ -187,6 +231,35 @@ foreach ($properties as $property) {
             e.stopPropagation();
             $(this).find('i').toggleClass('far fas');
         });
+        
+        // Add image fullscreen view functionality
+        $('.main-image').click(function() {
+            const imgSrc = $(this).find('img').attr('src');
+            $('.fullscreen-image').attr('src', imgSrc);
+            $('.fullscreen-view').css('display', 'flex');
+            $('body').css('overflow', 'hidden');
+        });
+        
+        $('.fullscreen-close').click(function() {
+            $('.fullscreen-view').css('display', 'none');
+            $('body').css('overflow', 'auto');
+        });
+        
+        // Close fullscreen on clicking outside the image
+        $('.fullscreen-view').click(function(e) {
+            if (e.target !== $('.fullscreen-image')[0]) {
+                $('.fullscreen-view').css('display', 'none');
+                $('body').css('overflow', 'auto');
+            }
+        });
+        
+        // Thumbnail click handler to update main image
+        $('.thumbnail').click(function() {
+            const imgSrc = $(this).find('img').attr('src');
+            $(this).closest('.modal-content').find('.main-image img').attr('src', imgSrc);
+            $('.thumbnail').removeClass('active');
+            $(this).addClass('active');
+        });
     });
 
     // Open Modal Function
@@ -217,611 +290,677 @@ foreach ($properties as $property) {
             closeModal(event.target.id);
         }
     };
+
+    // Message Agent Function
+    $(document).on('click', '.agent-contact-btn.message', function(e) {
+        e.preventDefault();
+        const agentId = $(this).data('agent');
+        
+        // Check if user is logged in
+        <?php if (isset($_SESSION['user_id'])): ?>
+            // Here you can implement AJAX to send message or redirect to a messaging page
+            alert("Messaging feature will be implemented soon. Agent ID: " + agentId);
+        <?php else: ?>
+            alert("Please log in to message an agent");
+            window.location.href = "/subdisystem/login.php";
+        <?php endif; ?>
+    });
     </script>
+</body>
+</html>
 
-    <style>
-    /* Global Styles */
-    body {
-        background-color:white;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        color: #333;
-        line-height: 1.6;
-    }
-    
+<style>
     h1, h2, h3, h4, h5, h6 {
-        font-weight: 600;
-    }
-    
-    /* Hero Section */
-    .property-hero {
-        background-image: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('https://via.placeholder.com/1920x600');
-        background-size: cover;
-        background-position: center;
-        height: 400px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        color: white;
-        margin-bottom: 40px;
-    }
-    
-    .hero-content {
-        max-width: 800px;
-        padding: 0 20px;
-    }
-    
-    .hero-content h1 {
-        font-size: 3rem;
-        margin-bottom: 15px;
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
-    }
-    
-    .hero-content p {
-        font-size: 1.2rem;
-        margin-bottom: 30px;
-        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-    }
-    
-    
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
 
-    /* Property Container */
-    .property-container {
-        max-width: 1200px;
-        margin: 0 auto 60px;
-    }
-    
-    /* Property Filters */
-    .property-filters {
-        margin-bottom: 30px;
-        background: white;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    }
-    
-    .filter-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 20px;
-    }
-    
-    .filter-header h2 {
-        margin: 0;
-        font-size: 1.8rem;
-        color: #2c3e50;
-    }
-    
-    .property-count {
-        background: #f1f1f1;
-        padding: 5px 15px;
-        border-radius: 20px;
-        font-size: 14px;
-        color: #555;
-    }
-    
-    .filter-options {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 20px;
-        align-items: flex-end;
-    }
-    
-    .filter-group {
-        flex: 1;
-        min-width: 200px;
-    }
-    
-    .filter-group label {
-        display: block;
-        margin-bottom: 8px;
-        color: #555;
-        font-weight: 500;
-    }
-    
-    .filter-btn {
-        background: #f1f1f1;
-        color: #555;
-        border: none;
-        padding: 8px 15px;
-        border-radius: 5px;
-        transition: all 0.3s;
-    }
-    
-    .filter-btn:hover {
-        background: #e0e0e0;
-    }
-    
-    .filter-btn.active {
-        background: #3498db;
-        color: white;
-    }
-    
-    /* Property Grid */
-    .property-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-        gap: 30px;
-    }
-    
-    /* Property Card */
-    .property-card {
-        background: white;
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-        transition: transform 0.3s, box-shadow 0.3s;
-        position: relative;
-    }
-    
-    .property-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
-    }
-    
-    .property-badge {
-        position: absolute;
-        top: 15px;
-        left: 15px;
-        background: #3498db;
-        color: white;
-        padding: 5px 12px;
-        font-size: 12px;
-        font-weight: 600;
-        border-radius: 20px;
-        z-index: 1;
-    }
-    
-    .property-favorite {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        background: white;
-        color: #777;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        z-index: 1;
-        transition: background 0.3s, color 0.3s, transform 0.3s;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    }
-    
-    .property-favorite:hover {
-        transform: scale(1.1);
-    }
-    
-    .property-favorite .fas {
-        color: #e74c3c;
-    }
-    
-    .property-image {
-        height: 220px;
-        position: relative;
-    }
-    
-    .property-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.5s;
-    }
-    
-    .property-card:hover .property-image img {
-        transform: scale(1.05);
-    }
-    
-    .property-details {
-        padding: 20px;
-    }
-    
-    .property-title {
-        font-size: 1.3rem;
-        margin: 0 0 10px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    
-    .property-price {
-        font-size: 1.4rem;
-        font-weight: 700;
-        color: #3498db;
-        margin-bottom: 15px;
-    }
-    
-    
-    .property-actions {
-        display: flex;
-        gap: 10px;
-    }
-    
-    .btn-view-details, .btn-contact-agent {
-        flex: 1;
-        padding: 10px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-weight: 600;
-        transition: background 0.3s;
-    }
-    
-    .btn-view-details {
-        background: #3498db;
-        color: white;
-    }
-    
-    .btn-view-details:hover {
-        background: #2980b9;
-    }
-    
-    .btn-contact-agent {
-        background: #f1f1f1;
-        color: #555;
-    }
-    
-    .btn-contact-agent:hover {
-        background: #e0e0e0;
-    }
-    
-    /* No Results */
-    .no-results {
-        text-align: center;
-        padding: 50px 20px;
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-    }
-    
-    .no-results i {
-        font-size: 48px;
-        color: #bdc3c7;
-        margin-bottom: 15px;
-    }
-    
-    .no-results h3 {
-        font-size: 1.4rem;
-        margin-bottom: 10px;
-        color: #2c3e50;
-    }
-    
-    .no-results p {
-        color: #7f8c8d;
-    }
-    
-    /* Modal Styles */
-    .property-modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        z-index: 1000;
-        justify-content: center;
-        align-items: center;
+/* Hero Section */
+.property-hero {
+    background-image: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), url('https://via.placeholder.com/1920x600');
+    background-size: cover;
+    background-position: center;
+    height: 450px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: white;
+    margin-bottom: 60px;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-content {
+    max-width: 900px;
+    padding: 0 30px;
+    position: relative;
+    z-index: 2;
+}
+
+.hero-content h1 {
+    font-size: 3.5rem;
+    margin-bottom: 20px;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+    animation: fadeInUp 1s ease;
+}
+
+.hero-content p {
+    font-size: 1.4rem;
+    margin-bottom: 35px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+    opacity: 0.9;
+    animation: fadeInUp 1.2s ease;
+}
+
+@keyframes fadeInUp {
+    from {
         opacity: 0;
-        transition: opacity 0.3s;
+        transform: translateY(20px);
     }
-    
-    .property-modal.show {
+    to {
         opacity: 1;
+        transform: translateY(0);
     }
-    
+}
+
+/* Enlarged Property Container */
+.property-container {
+    max-width: 1800px; /* Further increased width for better detail viewing */
+    margin: 0 auto 100px;
+    padding: 0 30px;
+}
+
+/* Enlarged Property Description Scrollbar */
+.modal-info {   
+    padding: 40px 50px; /* Increased padding */
+    overflow-y: auto;
+    max-height: 70vh; /* Increased from 55vh */
+}
+
+.modal-info::-webkit-scrollbar {
+    width: 14px; /* Larger scrollbar width */
+}
+
+.modal-info::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.modal-info::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 10px;
+    border: 3px solid #f1f1f1;
+}
+
+.modal-info::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+
+/* Property Filters */
+.property-filters {
+    margin-bottom: 40px;
+    background: white;
+    padding: 25px 30px;
+    border-radius: 12px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.07);
+    position: relative;
+    z-index: 1;
+    transition: all 0.3s ease;
+}
+
+.property-filters:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+}
+
+.filter-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.filter-header h2 {
+    margin: 0;
+    font-size: 2rem;
+    color: #1a202c;
+    position: relative;
+}
+
+.filter-header h2:after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 0;
+    width: 40px;
+    height: 3px;
+    background: var(--primary);
+    border-radius: 2px;
+}
+
+.property-count {
+    background: #f0f5ff;
+    padding: 8px 18px;
+    border-radius: 25px;
+    font-size: 15px;
+    color: var(--primary);
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+
+.filter-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 25px;
+    align-items: flex-end;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 10px;
+    color: #4a5568;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.filter-btn {
+    background: #f7fafc;
+    color: #4a5568;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    padding: 10px 18px;
+    border-radius: 8px;
+    transition: all 0.3s;
+    font-weight: 500;
+}
+
+.filter-btn:hover {
+    background: #edf2f7;
+    transform: translateY(-2px);
+}
+
+.filter-btn.active {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(66, 133, 244, 0.2);
+    border-color: var(--primary);
+}
+
+/* Property Grid */
+.property-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 35px;
+}
+
+/* Property Card */
+.property-card {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    transition: transform 0.4s, box-shadow 0.4s;
+    position: relative;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transform-origin: center bottom;
+}
+
+.property-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+.property-badge {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: var(--primary);
+    color: white;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 30px;
+    z-index: 1;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.property-favorite {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: white;
+    color: #64748b;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1;
+    transition: all 0.3s;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.property-favorite:hover {
+    transform: scale(1.15);
+    background: #fff5f5;
+}
+
+.property-favorite .fas {
+    color: #e53e3e;
+}
+
+/* Property Card - Enlarged property image */
+.property-image {
+    height: 300px; /* Increased from 240px for larger property thumbnails */
+    position: relative;
+    overflow: hidden;
+}
+
+.property-image:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.3), transparent);
+}
+
+.property-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s ease;
+}
+
+.property-card:hover .property-image img {
+    transform: scale(1.08);
+}
+
+.property-details {
+    padding: 25px;
+}
+
+.property-title {
+    font-size: 1.4rem;
+    margin: 0 0 15px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #1a202c;
+    line-height: 1.3;
+}
+
+.property-price {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: baseline;
+}
+
+.property-price::before {
+    font-size: 1rem;
+    margin-right: 2px;
+    font-weight: 600;
+    opacity: 0.8;
+}
+
+.property-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-view-details, .btn-contact-agent {
+    flex: 1;
+    padding: 12px 10px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: all 0.3s;
+    font-size: 0.95rem;
+}
+
+.btn-view-details {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(66, 133, 244, 0.25);
+}
+
+.btn-view-details:hover {
+    background: var(--primary-dark);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(66, 133, 244, 0.3);
+}
+
+.btn-contact-agent {
+    background: #f7fafc;
+    color: #4a5568;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.btn-contact-agent:hover {
+    background: #edf2f7;
+    transform: translateY(-3px);
+}
+
+/* No Results */
+.no-results {
+    text-align: center;
+    padding: 70px 30px;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.07);
+}
+
+.no-results i {
+    font-size: 60px;
+    color: #cbd5e0;
+    margin-bottom: 20px;
+}
+
+.no-results h3 {
+    font-size: 1.6rem;
+    margin-bottom: 15px;
+    color: #1a202c;
+}
+
+.no-results p {
+    color: #718096;
+    font-size: 1.1rem;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+/* Modal Styles */
+.property-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    backdrop-filter: blur(5px);
+}
+
+.property-modal.show {
+    opacity: 1;
+}
+
+.modal-content {
+    display: flex;
+    flex-direction: row-reverse; /* Image on the right */
+    background: white;
+    width: 95%;
+    max-width: 1400px; /* Increased from 1100px */
+    max-height: 95vh; /* Increased from 90vh */
+    border-radius: 15px;
+    overflow: hidden;
+    position: relative;
+    transform: scale(0.95);
+    transition: transform 0.4s cubic-bezier(.17,.67,.83,.67);
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+}
+
+.property-modal.show .modal-content {
+    transform: scale(1);
+}
+
+.close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+    transition: all 0.3s;
+    font-size: 1.2rem;
+}
+
+.close:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: rotate(90deg);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+}
+
+/* Modal Gallery - Significantly enlarged property images */
+.modal-gallery {
+    background: rgb(255, 255, 255);
+    position: relative;
+    flex: 1.5; /* Increased from 1.2 to make the image section larger */
+    display: flex;
+    flex-direction: column;
+}
+
+.main-image {
+    height: 650px; /* Significantly increased from 550px */
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+    cursor: zoom-in;
+}
+
+.main-image::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.4), transparent);
+}
+
+.main-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* Ensures the whole image is visible */
+    transition: transform 0.5s ease;
+}
+
+/* Add a zoom effect on hover */
+.main-image:hover img {
+    transform: scale(1.05); /* Slightly larger zoom on hover */
+}
+
+/* Add a "Click to zoom" hint */
+.main-image::before {
+    content: 'Click to view full-size';
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.main-image:hover::before {
+    opacity: 1;
+}
+
+.thumbnail-strip {
+    display: flex;
+    padding: 15px;
+    gap: 15px;
+    background: white;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    overflow-x: auto;
+}
+
+.thumbnail {
+    width: 140px; /* Increased from 120px */
+    height: 90px; /* Increased from 80px */
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+    flex-shrink: 0;
+}
+
+.thumbnail:hover {
+    opacity: 1;
+    transform: translateY(-3px);
+}
+
+.thumbnail.active {
+    opacity: 1;
+    border-color: var(--primary);
+    box-shadow: 0 3px 10px rgba(66, 133, 244, 0.2);
+}
+
+.thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Fullscreen View - Enhanced for better image viewing */
+.fullscreen-view {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.97); /* Darker background for better contrast */
+    z-index: 2000;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+.fullscreen-image {
+    max-width: 98%; /* Increased from 95% */
+    max-height: 98%; /* Increased from 95% */
+    object-fit: contain;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+}
+
+/* Keep agent photo size the same - explicitly define to ensure no changes */
+.agent-photo {
+    width: 140px; /* Keep the existing size */
+    height: 140px; /* Keep the existing size */
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid white;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    position: relative;
+    flex-shrink: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
     .modal-content {
-        display: flex;
-        flex-direction: column;
-        background: white;
-        width: 90%;
-        max-width: 1000px;
-        max-height: 90vh;
-        border-radius: 10px;
-        overflow: hidden;
-        position: relative;
-        transform: scale(0.95);
-        transition: transform 0.3s;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    }
-    
-    .property-modal.show .modal-content {
-        transform: scale(1);
-    }
-    
-    .close {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        background: rgba(0, 0, 0, 0.5);
-        color: white;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        z-index: 2;
-        transition: background 0.3s, transform 0.3s;
-    }
-    
-    .close:hover {
-        background: rgba(0, 0, 0, 0.7);
-        transform: rotate(90deg);
+        flex-direction: column; /* Stack content at smaller sizes */
     }
     
     .modal-gallery {
-        background: #f8f9fa;
+        width: 100%;
     }
     
     .main-image {
-        height: 400px;
-        overflow: hidden;
+        height: 550px; /* Adjust for medium screens, but still larger than before */
+    }
+}
+
+@media (max-width: 768px) {
+    .property-image {
+        height: 280px; /* Still larger than original on mobile */
     }
     
-    .main-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
+    .main-image {
+        height: 450px; /* Adjust for smaller screens, but still larger than before */
+    }
+}
+
+@media (max-width: 576px) {
+    .property-image {
+        height: 250px; /* Maintain larger size even on small screens */
     }
     
-    .thumbnail-strip {
-        display: flex;
-        padding: 10px;
-        gap: 10px;
-        background: white;
+    .main-image {
+        height: 380px;
     }
     
     .thumbnail {
-        width: 80px;
-        height: 60px;
-        border-radius: 5px;
-        overflow: hidden;
-        cursor: pointer;
-        opacity: 0.7;
-        transition: opacity 0.3s;
+        width: 110px;
+        height: 75px;
     }
-    
-    .thumbnail:hover, .thumbnail.active {
-        opacity: 1;
-    }
-    
-    .thumbnail img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    
-    .modal-info {
-        padding: 30px;
-        overflow-y: auto;
-    }
-    
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 20px;
-    }
-    
-    .modal-title {
-        font-size: 1.8rem;
-        margin: 0 0 10px;
-        color: #2c3e50;
-    }
-    
-    .modal-location {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        color: #7f8c8d;
-        margin: 0;
-    }
-    
-    .modal-price {
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: #3498db;
-    }
-    
-    .modal-features {
-        display: flex;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 15px;
-        margin-bottom: 30px;
-        background: #f8f9fa;
-        padding: 20px;
-        border-radius: 10px;
-    }
-    
-    .feature {
-        text-align: center;
-        flex: 1;
-        min-width: 80px;
-    }
-    
-    .feature i {
-        font-size: 24px;
-        color: #3498db;
-        margin-bottom: 5px;
-    }
-    
-    .feature span {
-        display: block;
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: #2c3e50;
-    }
-    
-    .feature p {
-        margin: 0;
-        color: #7f8c8d;
-        font-size: 14px;
-    }
-    
-    .modal-section {
-        margin-bottom: 30px;
-    }
-    
-    .modal-section h3 {
-        font-size: 1.3rem;
-        margin-bottom: 15px;
-        color: #2c3e50;
-    }
-    
-    .amenities-list {
-        list-style: none;
-        padding: 0;
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-        gap: 10px;
-    }
-    
-    .amenities-list li {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-    
-    .amenities-list i {
-        color: #2ecc71;
-    }
-    
-    .modal-actions {
-        display: flex;
-        gap: 15px;
-        margin-bottom: 30px;
-    }
-    
-    .btn-schedule, .btn-contact {
-        flex: 1;
-        padding: 12px;
-        border: none;
-        border-radius: 5px;
-        font-weight: 600;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        transition: background 0.3s;
-    }
-    
-    .btn-schedule {
-        background: #3498db;
-        color: white;
-    }
-    
-    .btn-schedule:hover {
-        background: #2980b9;
-    }
-    
-    .btn-contact {
-        background: #f1f1f1;
-        color: #555;
-    }
-    
-    .btn-contact:hover {
-        background: #e0e0e0;
-    }
-    
-    .modal-agent {
-        display: flex;
-        gap: 20px;
-        padding: 20px;
-        background: #f8f9fa;
-        border-radius: 10px;
-    }
-    
-    .agent-photo {
-        width: 80px;
-        height: 80px;
-        border-radius: 50%;
-        overflow: hidden;
-    }
-    
-    .agent-photo img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    
-    .agent-info {
-        flex: 1;
-    }
-    
-    .agent-info h4 {
-        margin: 0 0 5px;
-        font-size: 1.1rem;
-        color: #2c3e50;
-    }
-    
-    .agent-info p {
-        margin: 0 0 5px;
-        color: #7f8c8d;
-    }
-    
-    /* Responsive Adjustments */
-    @media (max-width: 992px) {
-        .property-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-        
-        .modal-content {
-            max-width: 90%;
-        }
-    }
-    
-    @media (max-width: 768px) {
-        .hero-content h1 {
-            font-size: 2.2rem;
-        }
-        
-        .property-hero {
-            height: 300px;
-        }
-        
-        .filter-options {
-            flex-direction: column;
-            gap: 15px;
-        }
-        
-        .filter-group {
-            width: 100%;
-        }
-        
-        .modal-features {
-            gap: 10px;
-        }
-        
-        .modal-actions {
-            flex-direction: column;
-        }
-        
-        .main-image {
-            height: 300px;
-        }
-    }
-    
-    @media (max-width: 576px) {
-        .property-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .property-card {
-            max-width: 100%;
-        }
-        
-        .hero-content h1 {
-            font-size: 1.8rem;
-        }
-        
-        .hero-content p {
-            font-size: 1rem;
-        }
-    }
+}
+
+/* Image controls for navigation */
+.image-controls {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    transform: translateY(-50%);
+    padding: 0 15px;
+    z-index: 5;
+}
+
+.image-control {
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.image-control:hover {
+    background: rgba(0, 0, 0, 0.8);
+    transform: scale(1.1);
+}
+
+/* Zoom indicator */
+.zoom-indicator {
+    position: absolute;
+    bottom: 15px;
+    right: 15px;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    opacity: 0.7;
+    z-index: 1;
+}
+</style>
+<?php include '../includes/footer.php'; ?>

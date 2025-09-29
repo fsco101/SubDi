@@ -119,6 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Profile</title>
+    <link rel="stylesheet" href="./subdisystem/style/style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -182,7 +183,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
         .form-label {
             font-weight: 600;
             margin-bottom: 0.7rem;
-            color: white;
+            color: black;
             font-size: 0.95rem;
         }
 
@@ -418,7 +419,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
                                  }
             .password-toggle {
             border-radius: 0 10px 10px 0;
-            background-color: var(--light-bg);
+            background-color: var (--light-bg);
             border-color: var(--card-border);
             border-left: none;
             color: var(--secondary-color);
@@ -525,6 +526,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-key"></i></span>
                                 <input type="password" name="new_password" id="new_password" class="form-control" required placeholder="Enter new password">
+                                <button class="btn password-toggle" type="button" id="toggle-new-password">
+                                    <i class="fas fa-eye"></i>
+                                </button>
                             </div>
                             <div class="password-strength-meter mt-2">
                                 <div id="password-strength-bar"></div>
@@ -537,6 +541,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fas fa-key"></i></span>
                                 <input type="password" name="confirm_password" id="confirm_password" class="form-control" required placeholder="Confirm new password">
+                                <button class="btn password-toggle" type="button" id="toggle-confirm-password">
+                                    <i class="fas fa-eye"></i>
+                                </button>
                             </div>
                         </div>
 
@@ -574,6 +581,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
                 
                 reader.readAsDataURL(this.files[0]);
             }
+        });
+        
+        // Password toggle visibility functionality
+        const toggleNewPassword = document.getElementById('toggle-new-password');
+        const toggleConfirmPassword = document.getElementById('toggle-confirm-password');
+        const newPasswordInput = document.getElementById('new_password');
+        const confirmPasswordInput = document.getElementById('confirm_password');
+        
+        toggleNewPassword.addEventListener('click', function() {
+            const type = newPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            newPasswordInput.setAttribute('type', type);
+            this.querySelector('i').className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+        });
+        
+        toggleConfirmPassword.addEventListener('click', function() {
+            const type = confirmPasswordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            confirmPasswordInput.setAttribute('type', type);
+            this.querySelector('i').className = type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
         });
         
         // Password strength meter
@@ -632,3 +657,4 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['change_password'])) {
 </script>
 </body>
 </html>
+<?php include '../includes/footer.php'; ?>

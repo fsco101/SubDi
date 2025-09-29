@@ -203,14 +203,15 @@ document.addEventListener("click", function (event) {
         console.log("Bootstrap version:", bootstrap?.Dropdown ? "Loaded" : "Not Loaded");
 </script>
 
+
+<?php include './includes/footer.php'; ?>
+</body>
+</html>
+
+
 <style>
+    
 /* Global Styles */
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color:#f1f1f1;
-    color: #ffff;
-    line-height: 1.6;
-}
 
 /* Facility Gallery Container */
 .facility-gallery-container {
@@ -455,7 +456,7 @@ body {
 
 .modal-details h2 {
     font-size: 1.8rem;
-    color: #2c3e50;
+    color:rgb(255, 255, 255);
     margin-bottom: 15px;
 }
 
@@ -542,8 +543,5 @@ body.modal-open {
         flex-wrap: wrap;
     }
 }
-</style>
 
-<?php include './includes/footer.php'; ?>
-</body>
-</html>
+</style>

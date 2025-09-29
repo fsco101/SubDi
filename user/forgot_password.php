@@ -2,6 +2,7 @@
 // Start session
 session_start();
 include '../includes/config.php';
+include '../send_email.php';
 
 // Initialize variables
 $email = "";
@@ -11,36 +12,6 @@ $success = "";
 // Function to generate a secure token
 function generateToken($length = 32) {
     return bin2hex(random_bytes($length));
-}
-
-// Function to send password reset email
-function sendResetEmail($email, $token) {
-    // Use absolute URL with HTTPS for better security
-    $reset_link = "https://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/reset_password.php?token=" . urlencode($token) . "&email=" . urlencode($email);
-    
-    $subject = "Password Reset Request";
-    $message = "
-    <html>
-    <head>
-        <title>Password Reset</title>
-    </head>
-    <body>
-        <h2>Password Reset Request</h2>
-        <p>You have requested to reset your password. Please click the link below to reset your password:</p>
-        <p><a href='$reset_link'>Reset Password</a></p>
-        <p>If you did not request this password reset, please ignore this email.</p>
-        <p>This link will expire in 1 hour.</p>
-    </body>
-    </html>
-    ";
-    
-    // Set content-type header for sending HTML email
-    $headers = "MIME-Version: 1.0" . "\r\n";
-    $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-    $headers .= "From: security@yourdomain.com" . "\r\n"; // More specific sender
-    $headers .= "X-Mailer: PHP/" . phpversion();
-    
-    return mail($email, $subject, $message, $headers);
 }
 
 // Handle form submission
@@ -79,17 +50,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['csrf_token']) && $_POS
             $insert_success = $insert_stmt->execute();
             
             // Send email
-            if ($insert_success && sendResetEmail($email, $token)) {
-                $success = "Password reset link has been sent to your email.";
-                $email = ""; // Clear the form
+            if ($insert_success) {
+                $reset_link = "https://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/reset_password.php?token=" . urlencode($token) . "&email=" . urlencode($email);
+                $subject = "Password Reset Request";
+                $message = "
+                <html>
+                <head>
+                    <title>Password Reset</title>
+                </head>
+                <body>
+                    <h2>Password Reset Request</h2>
+                    <p>You have requested to reset your password. Please click the link below to reset your password:</p>
+                    <p><a href='$reset_link'>Reset Password</a></p>
+                    <p>If you did not request this password reset, please ignore this email.</p>
+                    <p>This link will expire in 1 hour.</p>
+                </body>
+                </html>
+                ";
                 
-                // Log the password reset request (for security auditing)
-                $log_sql = "INSERT INTO security_logs (user_email, action, ip_address, user_agent) VALUES (?, 'password_reset_request', ?, ?)";
-                $log_stmt = $conn->prepare($log_sql);
-                $ip = $_SERVER['REMOTE_ADDR'];
-                $user_agent = $_SERVER['HTTP_USER_AGENT'];
-                $log_stmt->bind_param("sss", $email, $ip, $user_agent);
-                $log_stmt->execute();
+                if (sendEmail($email, $subject, $message)) {
+                    $success = "Password reset link has been sent to your email.";
+                    $email = ""; // Clear the form
+                } else {
+                    $error = "Failed to send reset email. Please try again later.";
+                }
             } else {
                 $error = "Failed to process your request. Please try again later.";
             }

@@ -16,30 +16,28 @@ $announcements = $result->fetch_all(MYSQLI_ASSOC);
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title><h2 >Announcements</h2></title>
+    <title>Announcements</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
     <link rel="stylesheet" href="/subdisystem/style/style.css">
     <style>
-
-
         body {
-            background-color: white;
-            color: #f5f5f5;
-            
+            background-color: #f8f9fa;
+            color: #212529;
         }
         
         .announcement-card {
             border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             margin-bottom: 1.5rem;
-            background-color: #2c2c2c;
-            transition: transform 0.2s;
-            border: 1px solid #3c3c3c;
+            background-color: #ffffff;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #e0e0e0;
         }
         
         .announcement-card:hover {
             transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
         }
         
         .announcement-image {
@@ -51,13 +49,13 @@ $announcements = $result->fetch_all(MYSQLI_ASSOC);
         
         .announcement-info {
             padding: 1.5rem;
-            color: #f5f5f5;
+            color: #212529;
         }
         
         .announcement-title {
             text-align: center;
             font-weight: 600;
-            color: #ffffff;
+            color: #343a40;
             margin-bottom: 0.75rem;
         }
         
@@ -71,15 +69,15 @@ $announcements = $result->fetch_all(MYSQLI_ASSOC);
             border-radius: 6px;
             margin-top: 1.5rem;
             padding: 1.25rem;
-            background-color: #333333;
-            border: 1px solid #444444;
+            background-color: #f1f1f1;
+            border: 1px solid #e0e0e0;
         }
         
         .reply {
             padding: 0.75rem;
             margin-bottom: 0.75rem;
             border-left: 3px solid #007bff;
-            background-color: #2a2a2a;
+            background-color: #ffffff;
             border-radius: 0 4px 4px 0;
         }
         
@@ -93,18 +91,18 @@ $announcements = $result->fetch_all(MYSQLI_ASSOC);
             text-align: center;
             padding: 8px;
             margin-bottom: 10px;
-            background-color: #333333;
+            background-color: #e9ecef;
             border-radius: 4px;
             font-weight: 500;
             transition: background-color 0.2s;
         }
         
         .see-more-btn:hover {
-            background-color: #444444;
+            background-color: #dee2e6;
         }
         
         .text-muted {
-            color: #aaaaaa !important;
+            color: #6c757d !important;
         }
         
         .btn-outline-success {
@@ -123,29 +121,34 @@ $announcements = $result->fetch_all(MYSQLI_ASSOC);
         }
         
         .modal-content {
-            background-color: #2c2c2c;
-            color: #f5f5f5;
+            background-color: #ffffff;
+            color: #212529;
         }
         
         .modal-header {
-            border-bottom: 1px solid #444444;
+            border-bottom: 1px solid #e0e0e0;
         }
         
         .form-control {
-            background-color: #333333;
-            border: 1px solid #444444;
-            color: #f5f5f5;
+            background-color: #ffffff;
+            border: 1px solid #ced4da;
+            color: #212529;
         }
         
         .form-control:focus {
-            background-color: #3a3a3a;
-            color: #ffffff;
+            background-color: #ffffff;
+            color: #212529;
         }
         
         .alert-info {
-            background-color: #264653;
-            color: #f5f5f5;
-            border-color: #1d3557;
+            background-color: #e9ecef;
+            color: #212529;
+            border-color: #ced4da;
+        }
+        
+        h2 {
+            text-align: center;
+            color: #343a40 !important;
         }
     </style>
 </head>
@@ -328,7 +331,7 @@ $announcements = $result->fetch_all(MYSQLI_ASSOC);
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">Announcement Image</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body text-center p-0">
                     <img id="modalImage" src="" class="img-fluid">

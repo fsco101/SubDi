@@ -1,5 +1,5 @@
 <?php
-
+ob_start();
 include '../includes/header.php';
 
 // Ensure only admin can access
@@ -63,6 +63,7 @@ if (!$facility) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/subdisystem/style/style.css">
     <title>Edit Facility</title>
     <style>
         body {
@@ -332,6 +333,12 @@ if (!$facility) {
                 previewContainer.style.display = 'none';
             }
         }
+
+                        /**
+                 * Page Action Handler - Global utility for managing page actions and reloads
+                 * Add this to all PHP files to ensure consistent user experience
+                 */
+ 
     </script>
     
     <!-- Footer would be included here -->

@@ -70,6 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="stylesheet" href="/subdisystem/style/style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add New Item</title>
     <style>
@@ -110,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             display: block;
             margin-bottom: 8px;
             font-weight: bold;
-            color:white;
+            color:black;
         }
         
         input[type="text"],
@@ -226,6 +227,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                 reader.readAsDataURL(input.files[0]);
             }
         }
+
+                        /**
+                 * Page Action Handler - Global utility for managing page actions and reloads
+                 * Add this to all PHP files to ensure consistent user experience
+                 */
+ 
     </script>
 </body>
 </html>

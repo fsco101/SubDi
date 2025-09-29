@@ -1,5 +1,5 @@
 <?php
-
+ob_start();
 include '../includes/header.php';
 
 // Check if the user is logged in and is an admin
@@ -43,3 +43,8 @@ if (isset($_GET['id'])) {
     echo "No facility ID provided.";
 }
 ?>
+<script>                /**
+                 * Page Action Handler - Global utility for managing page actions and reloads
+                 * Add this to all PHP files to ensure consistent user experience
+                 */
+ </script>
